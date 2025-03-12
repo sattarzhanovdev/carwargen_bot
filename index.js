@@ -4,8 +4,9 @@ const axios = require('axios');
 const bot = new Telegraf('7932658245:AAFq2efubIKMFkVWlJJ0Dytr_wsGqYBK7EA');
 
 const userWatchlist = {}; // Список отслеживаемых машин пользователями
+const priceHistory = {}; // Хранение старых цен
 
-bot.start((ctx) => ctx.reply('Привет! Напиши марку и модель машины, например: Toyota Camry. Доп. команды: /compare, /credit, /watchlist'));
+bot.start((ctx) => ctx.reply('Привет! Напиши марку и модель машины, например: Toyota Camry. \nДоп. команды: /compare, /credit, /watchlist'));
 
 bot.on('text', async (ctx) => {
     const query = ctx.message.text.toLowerCase();
@@ -78,6 +79,30 @@ function handleWatchlist(ctx, query) {
 function getRandomRating() {
     return (Math.random() * (5 - 3) + 3).toFixed(1); // Генерация рейтинга от 3.0 до 5.0
 }
+
+async function checkPriceChanges() {
+    try {
+        const response = await axios.get('https://carwagenapi.pythonanywhere.com/api/cars/');
+        const cars = response.data;
+
+        for (const userId in userWatchlist) {
+            userWatchlist[userId].forEach(model => {
+                const car = cars.find(c => `${c.brand} ${c.model}`.toLowerCase().includes(model.toLowerCase()));
+                if (car) {
+                    const prevPrice = priceHistory[car.model];
+                    if (prevPrice && prevPrice !== car.price) {
+                        bot.telegram.sendMessage(userId, `⚠️ Цена на ${car.brand} ${car.model} изменилась! Было: ${prevPrice}$, стало: ${car.price}$`);
+                    }
+                    priceHistory[car.model] = car.price;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Ошибка проверки цен:', error);
+    }
+}
+
+setInterval(checkPriceChanges, 60000); // Проверка цен каждую минуту
 
 bot.launch();
 console.log("Бот запущен!");
