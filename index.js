@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const axios = require('axios');
 
-const bot = new Telegraf('YOUR_BOT_TOKEN');
+const bot = new Telegraf('7932658245:AAFq2efubIKMFkVWlJJ0Dytr_wsGqYBK7EA');
 
 const userWatchlist = {}; // Список отслеживаемых машин пользователями
 const priceHistory = {}; // Хранение старых цен
